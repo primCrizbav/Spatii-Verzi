@@ -1,63 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="ro">
 <head>
-    <title>Spatii Verzi - Crizbav</title>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spații Verzi - Crizbav</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; font-family: Arial, sans-serif; }
-        #map { height: 100vh; width: 100%; }
-        .legend { 
-            background: white; 
-            padding: 15px; 
-            border-radius: 8px; 
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        
+        .legend {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            max-width: 280px;
-        }
-        .legend h4 { 
-            margin: 0 0 15px 0; 
-            color: #2c5f2d; 
-            font-size: 18px;
-            text-align: center;
-        }
-        .legend-item { 
-            display: flex; 
-            align-items: center; 
-            margin: 8px 0; 
             font-size: 14px;
+            max-width: 200px;
         }
-        .legend-item input { margin-right: 8px; }
-        .color-box { 
-            width: 20px; 
-            height: 15px; 
-            margin-right: 8px; 
-            border: 1px solid #666;
+        
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .legend-item {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            border: 2px solid;
             border-radius: 3px;
         }
-        .popup-content {
-            font-family: Arial, sans-serif;
-            max-width: 250px;
-        }
-        .popup-content h4 {
-            margin: 0 0 10px 0;
-            color: #2c5f2d;
-            border-bottom: 2px solid #4CAF50;
-            padding-bottom: 5px;
-        }
+        
         .popup-content table {
-            width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            width: 100%;
         }
+        
         .popup-content td {
-            padding: 4px 6px;
+            padding: 5px 8px;
             border-bottom: 1px solid #eee;
         }
+        
         .popup-content td:first-child {
             font-weight: bold;
-            background-color: #f9f9f9;
-            width: 40%;
+            background: #f5f5f5;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin: 5px 0;
+        }
+        
+        .control-panel input, .control-panel button {
+            padding: 8px;
+            margin: 3px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .control-panel button {
+            background: white;
+            cursor: pointer;
+        }
+        
+        .control-panel button:hover {
+            background: #f0f0f0;
+        }
+        
+        .control-panel button.active {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .search-input {
+            width: 180px;
         }
     </style>
 </head>
@@ -65,130 +100,167 @@
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-geometryutil/0.10.1/leaflet.geometryutil.min.js"></script>
     <script>
-        // Initialize map centered on Crizbav area (disable location detection)
+        // Initialize map with maximum zoom capabilities
         var map = L.map('map', {
-            center: [46.7712, 23.6236],
-            zoom: 15,
-            zoomControl: true,
-            attributionControl: true
+            maxZoom: 22,
+            zoomControl: true
+        }).setView([45.8067, 25.4692], 20);
+
+        // Add high-resolution satellite basemap
+        var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 22,
+            attribution: '© Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+        }).addTo(map);
+
+        // Alternative basemap
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 22,
+            attribution: '© OpenStreetMap contributors'
         });
 
-        // Define multiple base layers
         var baseLayers = {
-            "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '© Esri, Maxar, Earthstar Geographics, and the GIS User Community'
-            }),
-            "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }),
-            "Hybrid": L.layerGroup([
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: '© Esri, Maxar, Earthstar Geographics, and the GIS User Community'
-                }),
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: ''
-                })
-            ])
+            "Satellite": satellite,
+            "OpenStreetMap": osm
         };
 
-        // Add default satellite layer
-        baseLayers["Satellite"].addTo(map);
-
-        // Layer groups for organization
+        // Layer storage
         var layerGroups = {};
+        var measurementLayer = L.layerGroup().addTo(map);
+        var isDistanceMeasuring = false;
+        var isAreaMeasuring = false;
+        var measurePoints = [];
 
-        // Function to safely get property value with multiple possible field names
+        // Layer configurations with VERY distinct styling
+        var layerConfigs = [
+            {
+                name: 'Copaci',
+                file: 'data/copaci.geojson',
+                color: '#006400',
+                fillColor: '#00FF00',
+                radius: 8,
+                fillOpacity: 0.9,
+                weight: 3,
+                type: 'point'
+            },
+            {
+                name: 'Aliniament Infrastructura',
+                file: 'data/aliniament_infrastructura.geojson',
+                color: '#0000FF',
+                fillColor: '#4169E1',
+                fillOpacity: 0.7,
+                weight: 4
+            },
+            {
+                name: 'SVD Aliniament',
+                file: 'data/svd_aliniament_infrastructura.geojson',
+                color: '#FF4500',
+                fillColor: '#FF8C00',
+                fillOpacity: 0.8,
+                weight: 5
+            },
+            {
+                name: 'Cimitir',
+                file: 'data/cimitir.geojson',
+                color: '#8B0000',
+                fillColor: '#CD5C5C',
+                fillOpacity: 0.7,
+                weight: 3
+            },
+            {
+                name: 'Vegetație Spontană',
+                file: 'data/zone_verzi_vegetatie_spontana.geojson',
+                color: '#228B22',
+                fillColor: '#90EE90',
+                fillOpacity: 0.6,
+                weight: 2
+            },
+            {
+                name: 'Zone Specializate',
+                file: 'data/zone_verzi_specializate.geojson',
+                color: '#8B008B',
+                fillColor: '#DA70D6',
+                fillOpacity: 0.7,
+                weight: 4
+            },
+            {
+                name: 'Parcuri & Grădini',
+                file: 'data/parcuri_gradini.geojson',
+                color: '#32CD32',
+                fillColor: '#98FB98',
+                fillOpacity: 0.6,
+                weight: 2
+            }
+        ];
+
+        // Helper function to get property values
         function getProperty(properties, fieldNames) {
             for (var i = 0; i < fieldNames.length; i++) {
-                if (properties[fieldNames[i]] !== undefined && properties[fieldNames[i]] !== null && properties[fieldNames[i]] !== '') {
+                if (properties[fieldNames[i]] !== undefined && 
+                    properties[fieldNames[i]] !== null && 
+                    properties[fieldNames[i]] !== '') {
                     return properties[fieldNames[i]];
                 }
             }
             return 'N/A';
         }
 
-        // Function to create popup content based on layer type
+        // Create popup content
         function createPopupContent(properties, layerName) {
             var content = '<div class="popup-content">';
             content += '<h4>' + layerName + '</h4>';
-            
-            // Debug: show all available fields for SVD Aliniament
-            if (layerName === 'SVD Aliniament') {
-                console.log('SVD Aliniament properties:', properties);
-                console.log('Available field names:', Object.keys(properties));
-            }
-            
             content += '<table>';
+
+            // Debug for SVD layer
+            if (layerName === 'SVD Aliniament') {
+                console.log('SVD Properties:', properties);
+                console.log('SVD Fields:', Object.keys(properties));
+            }
 
             switch(layerName) {
                 case 'Copaci':
                     content += '<tr><td>ID:</td><td>' + getProperty(properties, ['Nr.Identi', 'NrIdentifi', 'ID', 'id']) + '</td></tr>';
-                    content += '<tr><td>Specie:</td><td>' + getProperty(properties, ['Specie', 'specie', 'Species']) + '</td></tr>';
-                    content += '<tr><td>Diametru trunchi:</td><td>' + getProperty(properties, ['Diametru t', 'Diametru_t', 'Diametru', 'diametru']) + ' cm</td></tr>';
-                    content += '<tr><td>Înălțime:</td><td>' + getProperty(properties, ['Inaltime (', 'Inaltime', 'Height', 'height']) + ' m</td></tr>';
-                    content += '<tr><td>Starea:</td><td>' + getProperty(properties, ['Evaluarea', 'Starea', 'Status', 'status']) + '</td></tr>';
-                    break;
-                
-                case 'Zone Specializate':
-                    content += '<tr><td>ID:</td><td>' + getProperty(properties, ['Nr.Identifi', 'NrIdentifi', 'ID', 'id']) + '</td></tr>';
-                    content += '<tr><td>Destinație:</td><td>' + getProperty(properties, ['Destinatie', 'Destinație', 'destinatie']) + '</td></tr>';
-                    content += '<tr><td>Categorie:</td><td>' + getProperty(properties, ['Cat/Colonia', 'CatFolosin', 'Cat_Colonia', 'categoria']) + '</td></tr>';
-                    content += '<tr><td>Suprafață:</td><td>' + getProperty(properties, ['Suprafata', 'Suprafata (mp)', 'suprafata']) + ' mp</td></tr>';
-                    content += '<tr><td>Administrare:</td><td>' + getProperty(properties, ['Mod.Admin', 'ModAdmin', 'Mod_Admin', 'administrare']) + '</td></tr>';
-                    content += '<tr><td>Proprietate:</td><td>' + getProperty(properties, ['Tip.Proprie', 'TipProprie', 'Tip_Proprie', 'proprietate']) + '</td></tr>';
+                    content += '<tr><td>Specie:</td><td>' + getProperty(properties, ['Specie', 'specie']) + '</td></tr>';
+                    content += '<tr><td>Diametru:</td><td>' + getProperty(properties, ['Diametru t', 'Diametru_t', 'Diametru']) + ' cm</td></tr>';
+                    content += '<tr><td>Înălțime:</td><td>' + getProperty(properties, ['Inaltime (', 'Inaltime']) + ' m</td></tr>';
+                    content += '<tr><td>Starea:</td><td>' + getProperty(properties, ['Evaluarea', 'Starea']) + '</td></tr>';
                     break;
 
                 case 'SVD Aliniament':
-                    // Show all fields for debugging
-                    var allFields = Object.keys(properties);
-                    allFields.forEach(function(field) {
-                        if (properties[field] !== null && properties[field] !== '') {
-                            var label = field;
-                            if (field.toLowerCase().includes('ident') || field.toLowerCase().includes('id')) label = 'ID';
-                            else if (field.toLowerCase().includes('dest')) label = 'Destinație';
-                            else if (field.toLowerCase().includes('cat') || field.toLowerCase().includes('folosin')) label = 'Categorie';
-                            else if (field.toLowerCase().includes('supraf')) label = 'Suprafață';
-                            else if (field.toLowerCase().includes('admin')) label = 'Administrare';
-                            else if (field.toLowerCase().includes('propri')) label = 'Proprietate';
+                    // Show all fields for this layer to debug
+                    Object.keys(properties).forEach(function(key) {
+                        if (properties[key] !== null && properties[key] !== '') {
+                            var displayName = key;
+                            if (key.toLowerCase().includes('ident') || key === 'id') displayName = 'ID';
+                            else if (key.toLowerCase().includes('dest')) displayName = 'Destinație';
+                            else if (key.toLowerCase().includes('cat') || key.toLowerCase().includes('folosin')) displayName = 'Categorie';
+                            else if (key.toLowerCase().includes('supraf')) displayName = 'Suprafață';
+                            else if (key.toLowerCase().includes('admin')) displayName = 'Administrare';
+                            else if (key.toLowerCase().includes('propri')) displayName = 'Proprietate';
                             
-                            content += '<tr><td>' + label + ':</td><td>' + properties[field] + '</td></tr>';
+                            content += '<tr><td>' + displayName + ':</td><td>' + properties[key] + '</td></tr>';
                         }
                     });
                     break;
 
                 default:
-                    // For all other layers, show the standard fields with correct names
                     var id = getProperty(properties, ['NrIdentifi', 'Nr.Identifi', 'ID', 'id']);
-                    if (id !== 'N/A') {
-                        content += '<tr><td>ID:</td><td>' + id + '</td></tr>';
-                    }
+                    if (id !== 'N/A') content += '<tr><td>ID:</td><td>' + id + '</td></tr>';
                     
-                    var destinatie = getProperty(properties, ['Destinatie', 'Destinație', 'destinatie']);
-                    if (destinatie !== 'N/A') {
-                        content += '<tr><td>Destinație:</td><td>' + destinatie + '</td></tr>';
-                    }
+                    var dest = getProperty(properties, ['Destinatie', 'Destinație']);
+                    if (dest !== 'N/A') content += '<tr><td>Destinație:</td><td>' + dest + '</td></tr>';
                     
-                    var categoria = getProperty(properties, ['CatFolosin', 'Cat/Colonia', 'Categoria de folosinta', 'categoria']);
-                    if (categoria !== 'N/A') {
-                        content += '<tr><td>Categorie:</td><td>' + categoria + '</td></tr>';
-                    }
+                    var cat = getProperty(properties, ['CatFolosin', 'Cat/Colonia', 'categoria']);
+                    if (cat !== 'N/A') content += '<tr><td>Categorie:</td><td>' + cat + '</td></tr>';
                     
-                    var suprafata = getProperty(properties, ['Suprafata', 'Suprafata (mp)', 'suprafata']);
-                    if (suprafata !== 'N/A') {
-                        content += '<tr><td>Suprafață:</td><td>' + suprafata + ' mp</td></tr>';
-                    }
+                    var area = getProperty(properties, ['Suprafata', 'suprafata']);
+                    if (area !== 'N/A') content += '<tr><td>Suprafață:</td><td>' + area + ' mp</td></tr>';
                     
-                    var proprietate = getProperty(properties, ['TipProprie', 'Tip.Proprie', 'Tip_Proprie', 'proprietate']);
-                    if (proprietate !== 'N/A') {
-                        content += '<tr><td>Proprietate:</td><td>' + proprietate + '</td></tr>';
-                    }
+                    var prop = getProperty(properties, ['TipProprie', 'proprietate']);
+                    if (prop !== 'N/A') content += '<tr><td>Proprietate:</td><td>' + prop + '</td></tr>';
                     
-                    var administrare = getProperty(properties, ['ModAdmin', 'Mod.Admin', 'Mod_Admin', 'administrare']);
-                    if (administrare !== 'N/A') {
-                        content += '<tr><td>Administrare:</td><td>' + administrare + '</td></tr>';
-                    }
+                    var admin = getProperty(properties, ['ModAdmin', 'administrare']);
+                    if (admin !== 'N/A') content += '<tr><td>Administrare:</td><td>' + admin + '</td></tr>';
                     break;
             }
 
@@ -196,118 +268,120 @@
             return content;
         }
 
-        // Layer configurations
-        var layerConfigs = [
-            {
-                url: 'data/copaci.geojson',
-                name: 'Copaci',
-                color: '#228B22',
-                fillColor: '#32CD32',
-                weight: 2,
-                fillOpacity: 0.7
-            },
-            {
-                url: 'data/aliniament_infrastructura.geojson',
-                name: 'Aliniament Infrastructura',
-                color: '#0066cc',
-                weight: 3,
-                fillOpacity: 0.6
-            },
-            {
-                url: 'data/svd_aliniament_infrastructura.geojson',
-                name: 'SVD Aliniament',
-                color: '#ff6600',
-                weight: 3,
-                fillOpacity: 0.6
-            },
-            {
-                url: 'data/cimitir.geojson',
-                name: 'Cimitir',
-                color: '#666666',
-                fillColor: '#999999',
-                weight: 2,
-                fillOpacity: 0.5
-            },
-            {
-                url: 'data/zone_verzi_vegetatie_spontana.geojson',
-                name: 'Vegetație Spontană',
-                color: '#98FB98',
-                fillColor: '#98FB98',
-                weight: 1,
-                fillOpacity: 0.6
-            },
-            {
-                url: 'data/zone_verzi_specializate.geojson',
-                name: 'Zone Specializate',
-                color: '#32CD32',
-                fillColor: '#90EE90',
-                weight: 2,
-                fillOpacity: 0.7
-            },
-            {
-                url: 'data/parcuri_gradini.geojson',
-                name: 'Parcuri & Grădini',
-                color: '#006400',
-                fillColor: '#90EE90',
-                weight: 2,
-                fillOpacity: 0.8
-            }
-        ];
-
-        // Load all layers
-        layerConfigs.forEach(function(config) {
-            fetch(config.url)
+        // Load layer function with proper styling
+        function loadLayer(config) {
+            fetch(config.file)
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Loading ' + config.name + ': ' + data.features.length + ' features');
+                    
                     var layer = L.geoJSON(data, {
-                        style: {
-                            color: config.color,
-                            fillColor: config.fillColor || config.color,
-                            weight: config.weight,
-                            fillOpacity: config.fillOpacity,
-                            opacity: 0.8
+                        style: function(feature) {
+                            return {
+                                color: config.color,
+                                fillColor: config.fillColor,
+                                weight: config.weight,
+                                opacity: 1,
+                                fillOpacity: config.fillOpacity
+                            };
                         },
-                        onEachFeature: function(feature, layer) {
-                            var popupContent = createPopupContent(feature.properties, config.name);
-                            layer.bindPopup(popupContent);
-                            
-                            // Add hover effects
-                            layer.on('mouseover', function() {
-                                layer.setStyle({
-                                    weight: config.weight + 1,
-                                    fillOpacity: Math.min(config.fillOpacity + 0.2, 1)
-                                });
-                            });
-                            
-                            layer.on('mouseout', function() {
-                                layer.setStyle({
+                        pointToLayer: function(feature, latlng) {
+                            if (config.type === 'point') {
+                                return L.circleMarker(latlng, {
+                                    radius: config.radius,
+                                    fillColor: config.fillColor,
+                                    color: config.color,
                                     weight: config.weight,
+                                    opacity: 1,
                                     fillOpacity: config.fillOpacity
                                 });
+                            }
+                        },
+                        onEachFeature: function(feature, layer) {
+                            var popup = createPopupContent(feature.properties, config.name);
+                            layer.bindPopup(popup);
+                            
+                            // Hover effects
+                            layer.on('mouseover', function(e) {
+                                if (config.type === 'point') {
+                                    e.target.setStyle({
+                                        radius: config.radius + 3,
+                                        weight: config.weight + 1
+                                    });
+                                } else {
+                                    e.target.setStyle({
+                                        weight: config.weight + 2
+                                    });
+                                }
+                            });
+                            
+                            layer.on('mouseout', function(e) {
+                                if (config.type === 'point') {
+                                    e.target.setStyle({
+                                        radius: config.radius,
+                                        weight: config.weight
+                                    });
+                                } else {
+                                    e.target.setStyle({
+                                        weight: config.weight
+                                    });
+                                }
                             });
                         }
                     });
                     
                     layerGroups[config.name] = layer;
                     layer.addTo(map);
+                    
+                    // Center on first layer
+                    if (Object.keys(layerGroups).length === 1) {
+                        map.fitBounds(layer.getBounds());
+                        map.setZoom(20);
+                    }
                 })
-                .catch(error => {
-                    console.error('Error loading ' + config.name + ':', error);
-                });
-        });
+                .catch(error => console.error('Error loading ' + config.name + ':', error));
+        }
 
-        // Create legend and layer control
-        var legend = L.control({position: 'topright'});
+        // Load all layers
+        layerConfigs.forEach(loadLayer);
+
+        // Add search control
+        var searchControl = L.control({position: 'topleft'});
+        searchControl.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'control-panel');
+            div.innerHTML = '<input type="text" id="searchInput" class="search-input" placeholder="Căutare (ID, destinație...)"/>';
+            
+            L.DomEvent.disableClickPropagation(div);
+            return div;
+        };
+        searchControl.addTo(map);
+
+        // Add measurement control
+        var measureControl = L.control({position: 'topleft'});
+        measureControl.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'control-panel');
+            div.innerHTML = 
+                '<button id="distanceBtn">📏 Distanță</button>' +
+                '<button id="areaBtn">📐 Suprafață</button>' +
+                '<button id="clearBtn">🗑️ Șterge</button>';
+            
+            L.DomEvent.disableClickPropagation(div);
+            return div;
+        };
+        measureControl.addTo(map);
+
+        // Add legend
+        var legend = L.control({position: 'bottomright'});
         legend.onAdd = function(map) {
             var div = L.DomUtil.create('div', 'legend');
             div.innerHTML = '<h4>Spații Verzi</h4>';
             
             layerConfigs.forEach(function(config) {
+                var icon = config.type === 'point' ? '●' : '■';
                 div.innerHTML += 
                     '<div class="legend-item">' +
-                    '<input type="checkbox" id="' + config.name.replace(/\s+/g, '') + '" checked onchange="toggleLayer(\'' + config.name + '\')">' +
-                    '<div class="color-box" style="background-color: ' + (config.fillColor || config.color) + ';"></div>' +
-                    '<label for="' + config.name.replace(/\s+/g, '') + '">' + config.name + '</label>' +
+                    '<span class="legend-color" style="background-color:' + config.fillColor + ';border-color:' + config.color + ';">' + icon + '</span>' +
+                    '<span>' + config.name + '</span>' +
                     '</div>';
             });
             
@@ -315,86 +389,159 @@
         };
         legend.addTo(map);
 
-        // Add search control
-        var searchControl = L.control({position: 'topleft'});
-        searchControl.onAdd = function(map) {
-            var div = L.DomUtil.create('div', 'search-control');
-            div.style.background = 'white';
-            div.style.padding = '5px';
-            div.style.borderRadius = '5px';
-            div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-            div.style.marginTop = '10px';
-            div.innerHTML = '<input type="text" id="searchInput" placeholder="Căutare ID sau destinație..." style="padding: 5px; width: 200px; border: 1px solid #ccc; border-radius: 3px;">';
-            
-            // Prevent map interaction when using search
-            L.DomEvent.disableClickPropagation(div);
-            
-            return div;
-        };
-        searchControl.addTo(map);
-
-        // Add measurement tools
-        var measureControl = L.control({position: 'topleft'});
-        measureControl.onAdd = function(map) {
-            var div = L.DomUtil.create('div', 'measure-control');
-            div.style.background = 'white';
-            div.style.padding = '5px';
-            div.style.borderRadius = '5px';
-            div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-            div.style.marginTop = '10px';
-            div.innerHTML = 
-                '<button id="measureDistance" style="margin: 2px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer;">📏 Distanță</button><br>' +
-                '<button id="measureArea" style="margin: 2px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer;">📐 Suprafață</button><br>' +
-                '<button id="clearMeasurements" style="margin: 2px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; background: white; cursor: pointer;">🗑️ Șterge</button>';
-            
-            // Prevent map interaction when using tools
-            L.DomEvent.disableClickPropagation(div);
-            
-            return div;
-        };
-        measureControl.addTo(map);
-
-        // Measurement variables
-        var measurementLayer = L.layerGroup().addTo(map);
-        var isDistanceMeasuring = false;
-        var isAreaMeasuring = false;
-        var measurePoints = [];
-        var currentLine = null;
-        var currentPolygon = null;
-
-        // Toggle layer function
-        function toggleLayer(layerName) {
-            var layer = layerGroups[layerName];
-            if (layer) {
-                if (map.hasLayer(layer)) {
-                    map.removeLayer(layer);
-                } else {
-                    map.addLayer(layer);
-                }
+        // Search functionality
+        function setupSearch() {
+            var searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    var term = e.target.value.toLowerCase();
+                    if (term.length < 2) return;
+                    
+                    Object.keys(layerGroups).forEach(function(layerName) {
+                        layerGroups[layerName].eachLayer(function(layer) {
+                            if (layer.feature && layer.feature.properties) {
+                                var searchText = JSON.stringify(layer.feature.properties).toLowerCase();
+                                
+                                if (searchText.includes(term)) {
+                                    // Highlight and zoom to found feature
+                                    layer.setStyle({color: '#ff0000', weight: 6});
+                                    layer.openPopup();
+                                    
+                                    if (layer.getBounds) {
+                                        map.fitBounds(layer.getBounds());
+                                    } else if (layer.getLatLng) {
+                                        map.setView(layer.getLatLng(), 21);
+                                    }
+                                } else {
+                                    // Reset style
+                                    var config = layerConfigs.find(c => c.name === layerName);
+                                    if (config) {
+                                        layer.setStyle({
+                                            color: config.color,
+                                            weight: config.weight
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                    });
+                });
             }
         }
 
-        // Add scale
-        L.control.scale({
-            position: 'bottomleft',
-            metric: true,
-            imperial: false
-        }).addTo(map);
-
-        // Fit map to data bounds when all layers load (with proper centering)
-        setTimeout(function() {
-            var group = new L.featureGroup(Object.values(layerGroups));
-            if (group.getLayers().length > 0) {
-                // Fit to bounds with some padding, but ensure minimum zoom level
-                var bounds = group.getBounds();
-                map.fitBounds(bounds, {
-                    padding: [20, 20],
-                    maxZoom: 16  // Don't zoom in too much
-                });
-            } else {
-                // Fallback: ensure map stays centered on Crizbav even if data doesn't load
-                map.setView([46.7712, 23.6236], 15);
+        // Measurement functionality
+        function setupMeasurement() {
+            var distanceBtn = document.getElementById('distanceBtn');
+            var areaBtn = document.getElementById('areaBtn');
+            var clearBtn = document.getElementById('clearBtn');
+            
+            function resetMeasurement() {
+                isDistanceMeasuring = false;
+                isAreaMeasuring = false;
+                measurePoints = [];
+                map.getContainer().style.cursor = '';
+                
+                if (distanceBtn) distanceBtn.classList.remove('active');
+                if (areaBtn) areaBtn.classList.remove('active');
             }
+            
+            if (distanceBtn) {
+                distanceBtn.addEventListener('click', function() {
+                    resetMeasurement();
+                    isDistanceMeasuring = true;
+                    this.classList.add('active');
+                    map.getContainer().style.cursor = 'crosshair';
+                });
+            }
+            
+            if (areaBtn) {
+                areaBtn.addEventListener('click', function() {
+                    resetMeasurement();
+                    isAreaMeasuring = true;
+                    this.classList.add('active');
+                    map.getContainer().style.cursor = 'crosshair';
+                });
+            }
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    measurementLayer.clearLayers();
+                    resetMeasurement();
+                });
+            }
+            
+            // Map click handler for measurements
+            map.on('click', function(e) {
+                if (isDistanceMeasuring || isAreaMeasuring) {
+                    measurePoints.push(e.latlng);
+                    
+                    // Add point marker
+                    L.circleMarker(e.latlng, {
+                        color: 'red',
+                        radius: 4,
+                        fillOpacity: 1
+                    }).addTo(measurementLayer);
+                    
+                    if (isDistanceMeasuring && measurePoints.length >= 2) {
+                        // Draw line and calculate distance
+                        var line = L.polyline(measurePoints, {color: 'red', weight: 3}).addTo(measurementLayer);
+                        
+                        var totalDistance = 0;
+                        for (var i = 1; i < measurePoints.length; i++) {
+                            totalDistance += measurePoints[i-1].distanceTo(measurePoints[i]);
+                        }
+                        
+                        var distanceText = totalDistance > 1000 ? 
+                            (totalDistance/1000).toFixed(2) + ' km' : 
+                            totalDistance.toFixed(1) + ' m';
+                        
+                        L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent('Distanță: ' + distanceText)
+                            .openOn(map);
+                    }
+                    
+                    if (isAreaMeasuring && measurePoints.length >= 3) {
+                        // Draw polygon and calculate area
+                        var polygon = L.polygon(measurePoints, {
+                            color: 'blue',
+                            fillColor: 'blue',
+                            fillOpacity: 0.2,
+                            weight: 3
+                        }).addTo(measurementLayer);
+                        
+                        // Simple area calculation
+                        var area = 0;
+                        var n = measurePoints.length;
+                        for (var i = 0; i < n; i++) {
+                            var j = (i + 1) % n;
+                            area += measurePoints[i].lat * measurePoints[j].lng;
+                            area -= measurePoints[j].lat * measurePoints[i].lng;
+                        }
+                        area = Math.abs(area) / 2 * 111000 * 111000; // rough conversion to m²
+                        
+                        var areaText = area > 10000 ? 
+                            (area/10000).toFixed(2) + ' ha' : 
+                            area.toFixed(1) + ' m²';
+                        
+                        L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent('Suprafață: ' + areaText)
+                            .openOn(map);
+                    }
+                }
+            });
+        }
+
+        // Layer control
+        setTimeout(function() {
+            L.control.layers(baseLayers, layerGroups, {
+                position: 'topleft',
+                collapsed: false
+            }).addTo(map);
+            
+            setupSearch();
+            setupMeasurement();
         }, 3000);
     </script>
 </body>
