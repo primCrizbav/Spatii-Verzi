@@ -219,11 +219,11 @@
 
             switch(layerName) {
                 case 'Copaci':
-                    content += '<tr><td>ID:</td><td>' + getProperty(properties, ['Nr.Identi', 'NrIdentifi', 'ID', 'id']) + '</td></tr>';
+                    content += '<tr><td>ID:</td><td>' + getProperty(properties, ['Nr. identi', 'Nr.Identi', 'NrIdentifi', 'ID', 'id']) + '</td></tr>';
                     content += '<tr><td>Specie:</td><td>' + getProperty(properties, ['Specie', 'specie']) + '</td></tr>';
                     content += '<tr><td>Diametru:</td><td>' + getProperty(properties, ['Diametru t', 'Diametru_t', 'Diametru']) + ' cm</td></tr>';
                     content += '<tr><td>Înălțime:</td><td>' + getProperty(properties, ['Inaltime (', 'Inaltime']) + ' m</td></tr>';
-                    content += '<tr><td>Starea:</td><td>' + getProperty(properties, ['Evaluarea', 'Starea']) + '</td></tr>';
+                    content += '<tr><td>Starea:</td><td>' + getProperty(properties, ['Evaluarea ', 'Evaluarea', 'Starea']) + '</td></tr>';
                     break;
 
                 case 'SVD Aliniament':
